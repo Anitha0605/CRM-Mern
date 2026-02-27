@@ -5,18 +5,25 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const dotenv = require('dotenv');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ✅ CORS CONFIG
+app.use(cors({
+  origin: [
+    'https://crm-mern-assignment14.netlify.app',
+    'https://crm-mern-assignment-14.onrender.com',
+    'http://localhost:5173'
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
-//  MongoDB Atlas (Render)
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log(' MongoDB Connected'))
-  .catch(err => console.log(' MongoDB Error:', err));
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.log('❌ MongoDB Error:', err.message));
 
 // SCHEMAS
 const UserSchema = new mongoose.Schema({
@@ -37,25 +44,25 @@ const Customer = mongoose.model('Customer', CustomerSchema);
 
 // AUTH MIDDLEWARE
 const authMiddleware = (req, res, next) => {
-  const token = req.header('authorization')?.replace('Bearer ', '');
+  const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ success: false, message: 'No token' });
   
-  jwt.verify(token, process.env.JWT_SECRET || 'crm-secret-key', (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET || 'crm-secret-key-2026', (err, decoded) => {
     if (err) return res.status(401).json({ success: false, message: 'Invalid token' });
     req.user = decoded;
     next();
   });
 };
 
-//  ALL ROUTES
+// ✅ API ROUTES
 app.post('/api/auth/register', async (req, res) => {
-  console.log(' REGISTER:', req.body.email);
+  console.log('📝 REGISTER:', req.body.email);
   try {
     const { name, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ name, email, password: hashedPassword });
     await user.save();
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'crm-secret-key');
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'crm-secret-key-2026');
     res.json({ success: true, user: { id: user._id, name, email }, token });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -63,14 +70,14 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  console.log(' LOGIN:', req.body.email);
+  console.log('🔐 LOGIN:', req.body.email);
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user || !await bcrypt.compare(password, user.password)) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'crm-secret-key');
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'crm-secret-key-2026');
     res.json({ success: true, user: { id: user._id, name: user.name, email }, token });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -78,7 +85,6 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/customers', authMiddleware, async (req, res) => {
-  console.log(' GET customers');
   try {
     const customers = await Customer.find().sort({ createdAt: -1 });
     res.json({ success: true, customers });
@@ -88,7 +94,6 @@ app.get('/api/customers', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/customers', authMiddleware, async (req, res) => {
-  console.log(' ADD:', req.body.name);
   try {
     const customer = new Customer(req.body);
     await customer.save();
@@ -99,7 +104,6 @@ app.post('/api/customers', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/customers/:id', authMiddleware, async (req, res) => {
-  console.log(' UPDATE:', req.params.id);
   try {
     const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!customer) return res.status(404).json({ success: false, message: 'Not found' });
@@ -110,7 +114,6 @@ app.put('/api/customers/:id', authMiddleware, async (req, res) => {
 });
 
 app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
-  console.log(' DELETE:', req.params.id);
   try {
     const result = await Customer.deleteOne({ _id: req.params.id });
     if (result.deletedCount === 0) {
@@ -118,31 +121,20 @@ app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
     }
     res.json({ success: true, message: 'Customer deleted successfully!' });
   } catch (error) {
-    console.error('DELETE ERROR:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
 app.get('/', (req, res) => res.json({ success: true, message: 'CRM API 100% Working!' }));
 
+// ✅ Production Static Serve (FIXED - Backend API only)
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist/index.html'));
-  });
+  // Backend API only - No frontend static serve needed
+  console.log('🚀 Production API Server');
 }
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
-  });
-}
-
-
-//  PORT
+// ✅ Render PORT (FIXED)
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(` Server running on PORT: ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on PORT: ${PORT}`);
 });
