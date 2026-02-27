@@ -7,21 +7,28 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
-// 🔥 NETLIFY CORS - SPECIAL CONFIG (FIRST LINE)
+//  NETLIFY CORS - SPECIFIC ORIGINS (FIRST LINE)
 app.use(cors({
-  origin: true,  // ✅ ALL ORIGINS ALLOW (Netlify fix)
-  credentials: true
+  origin: [
+    'https://crm-mern-assignment14.netlify.app',  // Netlify frontend
+    'http://localhost:5173',                      // Vite dev server
+    'https://crm-mern-kdbb.onrender.com'          // Render (backup)
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+//  BODY PARSERS
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// 🔥 MongoDB
+//  MONGODB (Modern driver - no deprecated options)
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.log('❌ MongoDB Error:', err.message));
+  .then(() => console.log(' MongoDB Connected'))
+  .catch(err => console.log(' MongoDB Error:', err.message));
 
-// 🔥 Schemas
+//  SCHEMAS
 const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true, required: true },
@@ -38,7 +45,7 @@ const CustomerSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Customer = mongoose.model('Customer', CustomerSchema);
 
-// 🔥 Auth middleware
+//  AUTH MIDDLEWARE
 const authMiddleware = (req, res, next) => {
   const authHeader = req.header('Authorization') || req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -56,14 +63,15 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// 🔥 Routes (same as before)
+//  ROOT TEST ROUTE
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'CRM API 100% Working! 🚀' });
 });
 
+//  REGISTER
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log('📝 REGISTER:', req.body.email);
+    console.log(' REGISTER:', req.body.email);
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -80,15 +88,15 @@ app.post('/api/auth/register', async (req, res) => {
     await user.save();
 
     const token = jwt.sign(
-      { userId: user._id }, 
-      process.env.JWT_SECRET || 'crm-super-secret-2026', 
+      { userId: user._id },
+      process.env.JWT_SECRET || 'crm-super-secret-2026',
       { expiresIn: '7d' }
     );
 
-    res.json({ 
-      success: true, 
-      user: { id: user._id, name, email }, 
-      token 
+    res.json({
+      success: true,
+      user: { id: user._id, name, email },
+      token
     });
   } catch (error) {
     console.error('REGISTER ERROR:', error.message);
@@ -96,9 +104,10 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+//  LOGIN
 app.post('/api/auth/login', async (req, res) => {
   try {
-    console.log('🔐 LOGIN:', req.body.email);
+    console.log(' LOGIN:', req.body.email);
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
@@ -107,15 +116,15 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id }, 
-      process.env.JWT_SECRET || 'crm-super-secret-2026', 
+      { userId: user._id },
+      process.env.JWT_SECRET || 'crm-super-secret-2026',
       { expiresIn: '7d' }
     );
 
-    res.json({ 
-      success: true, 
-      user: { id: user._id, name: user.name, email }, 
-      token 
+    res.json({
+      success: true,
+      user: { id: user._id, name: user.name, email },
+      token
     });
   } catch (error) {
     console.error('LOGIN ERROR:', error.message);
@@ -123,6 +132,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+//  GET CUSTOMERS
 app.get('/api/customers', authMiddleware, async (req, res) => {
   try {
     const customers = await Customer.find().sort({ createdAt: -1 });
@@ -132,6 +142,7 @@ app.get('/api/customers', authMiddleware, async (req, res) => {
   }
 });
 
+//  CREATE CUSTOMER
 app.post('/api/customers', authMiddleware, async (req, res) => {
   try {
     const customer = new Customer(req.body);
@@ -142,40 +153,43 @@ app.post('/api/customers', authMiddleware, async (req, res) => {
   }
 });
 
+// UPDATE CUSTOMER
 app.put('/api/customers/:id', authMiddleware, async (req, res) => {
   try {
     const customer = await Customer.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
+      req.params.id,
+      req.body,
       { new: true, runValidators: true }
     );
-    
+
     if (!customer) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
-    
+
     res.json({ success: true, customer });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 });
 
+//  DELETE CUSTOMER
 app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
   try {
     const result = await Customer.deleteOne({ _id: req.params.id });
-    
+
     if (result.deletedCount === 0) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
-    
+
     res.json({ success: true, message: 'Customer deleted successfully!' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
+// 🔥 SERVER START
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 CRM Server running on PORT: ${PORT}`);
-  console.log('✅ Netlify CORS 100% FIXED!');
+  console.log(` CRM Server running on PORT: ${PORT}`);
+ 
 });
