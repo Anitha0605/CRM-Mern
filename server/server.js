@@ -7,17 +7,11 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
-//  NETLIFY CORS - SPECIFIC ORIGINS (FIRST LINE)
 app.use(cors({
-  origin: [
-    'https://crm-mern-eosin.vercel.app',  
-    'http://localhost:5173',                      // Vite dev server
-    'https://crm-mern-kdbb.onrender.com'          // Render
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: true,
+  credentials: true
 }));
+
 
 //  BODY PARSERS
 app.use(express.json({ limit: '10mb' }));
