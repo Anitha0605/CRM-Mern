@@ -10,7 +10,7 @@ const app = express();
 //  NETLIFY CORS - SPECIFIC ORIGINS (FIRST LINE)
 app.use(cors({
   origin: [
-    'https://crm-mern-assignment14.netlify.app',  // Netlify frontend
+    'https://crm-mern-eosin.vercel.app',  
     'http://localhost:5173',                      // Vite dev server
     'https://crm-mern-kdbb.onrender.com'          // Render
   ],
