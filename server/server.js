@@ -12,7 +12,7 @@ app.use(cors({
   origin: [
     'https://crm-mern-assignment14.netlify.app',  // Netlify frontend
     'http://localhost:5173',                      // Vite dev server
-    'https://crm-mern-kdbb.onrender.com'          // Render (backup)
+    'https://crm-mern-kdbb.onrender.com'          // Render
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -23,7 +23,7 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-//  MONGODB (Modern driver - no deprecated options)
+//  MONGODB 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log(' MongoDB Connected'))
   .catch(err => console.log(' MongoDB Error:', err.message));
@@ -63,12 +63,25 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-//  ROOT TEST ROUTE
+//  ROOT + FRONTEND ROUTES (FIXED 404 ERRORS)
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'CRM API 100% Working! 🚀' });
 });
 
-//  REGISTER
+//  FRONTEND ROUTE TESTS (No 404 errors)
+app.get('/register', (req, res) => {
+  res.json({ success: true, message: 'Register API Ready! POST /api/auth/register' });
+});
+
+app.get('/login', (req, res) => {
+  res.json({ success: true, message: 'Login API Ready! POST /api/auth/login' });
+});
+
+app.get('/dashboard', (req, res) => {
+  res.json({ success: true, message: 'Dashboard API Ready! GET /api/customers' });
+});
+
+//  REGISTER API
 app.post('/api/auth/register', async (req, res) => {
   try {
     console.log(' REGISTER:', req.body.email);
@@ -104,10 +117,10 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-//  LOGIN
+//  LOGIN API
 app.post('/api/auth/login', async (req, res) => {
   try {
-    console.log(' LOGIN:', req.body.email);
+    console.log('🔐 LOGIN:', req.body.email);
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
@@ -132,7 +145,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-//  GET CUSTOMERS
+// CUSTOMER ROUTES
 app.get('/api/customers', authMiddleware, async (req, res) => {
   try {
     const customers = await Customer.find().sort({ createdAt: -1 });
@@ -142,7 +155,6 @@ app.get('/api/customers', authMiddleware, async (req, res) => {
   }
 });
 
-//  CREATE CUSTOMER
 app.post('/api/customers', authMiddleware, async (req, res) => {
   try {
     const customer = new Customer(req.body);
@@ -153,7 +165,6 @@ app.post('/api/customers', authMiddleware, async (req, res) => {
   }
 });
 
-// UPDATE CUSTOMER
 app.put('/api/customers/:id', authMiddleware, async (req, res) => {
   try {
     const customer = await Customer.findByIdAndUpdate(
@@ -172,7 +183,6 @@ app.put('/api/customers/:id', authMiddleware, async (req, res) => {
   }
 });
 
-//  DELETE CUSTOMER
 app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
   try {
     const result = await Customer.deleteOne({ _id: req.params.id });
@@ -187,9 +197,9 @@ app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// 🔥 SERVER START
+//  SERVER START
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(` CRM Server running on PORT: ${PORT}`);
- 
+  
 });
