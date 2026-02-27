@@ -7,27 +7,21 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
-//  CORS 
+// 🔥 NETLIFY CORS - SPECIAL CONFIG (FIRST LINE)
 app.use(cors({
-  origin: [
-    'https://crm-mern-assignment14.netlify.app',
-    'http://localhost:5173',
-    'https://crm-mern-assignment-14.onrender.com'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: true,  // ✅ ALL ORIGINS ALLOW (Netlify fix)
+  credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-//  MONGODB 
+// 🔥 MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log(' MongoDB Connected'))
-  .catch(err => console.log(' MongoDB Error:', err.message));
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.log('❌ MongoDB Error:', err.message));
 
-//  SCHEMAS
+// 🔥 Schemas
 const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true, required: true },
@@ -44,7 +38,7 @@ const CustomerSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Customer = mongoose.model('Customer', CustomerSchema);
 
-//  AUTH MIDDLEWARE
+// 🔥 Auth middleware
 const authMiddleware = (req, res, next) => {
   const authHeader = req.header('Authorization') || req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -62,14 +56,14 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-//  ROUTES
+// 🔥 Routes (same as before)
 app.get('/', (req, res) => {
-  res.json({ success: true, message: 'CRM API 100% Working! ' });
+  res.json({ success: true, message: 'CRM API 100% Working! 🚀' });
 });
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log(' REGISTER:', req.body.email);
+    console.log('📝 REGISTER:', req.body.email);
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -180,9 +174,8 @@ app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// SERVER START
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(` CRM Server running on PORT: ${PORT}`);
-  console.log(' MongoDB + CORS 100% Ready!');
+  console.log(`🚀 CRM Server running on PORT: ${PORT}`);
+  console.log('✅ Netlify CORS 100% FIXED!');
 });
